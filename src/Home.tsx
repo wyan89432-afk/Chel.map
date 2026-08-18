@@ -76,17 +76,17 @@ function GridRow({ row, index }: { row: ParsedRow; index: number }) {
   );
 }
 
-function ConnectorLayer({ rows }: { rows: ParsedRow[] }) {
-  const points = rows.map((row, index) => `${row.digits[2] * 100 + 50},${index * ROW_HEIGHT + ROW_HEIGHT / 2}`).join(" ");
+function ConnectorLayer({ rows, digitIndex, markerId, color }: { rows: ParsedRow[]; digitIndex: number; markerId: string; color: string }) {
+  const points = rows.map((row, index) => `${row.digits[digitIndex] * 100 + 50},${index * ROW_HEIGHT + ROW_HEIGHT / 2}`).join(" ");
   if (rows.length < 2) return null;
   return (
     <svg className="connector-layer" viewBox={`0 0 1000 ${rows.length * ROW_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
       <defs>
-        <marker id="unit-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
-          <path d="M0,0 L7,3.5 L0,7 z" fill="#ff3b2f" />
+        <marker id={markerId} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L7,3.5 L0,7 z" fill={color} />
         </marker>
       </defs>
-      <polyline points={points} fill="none" stroke="#ff3b2f" strokeWidth="2.6" vectorEffect="non-scaling-stroke" markerMid="url(#unit-arrow)" markerEnd="url(#unit-arrow)" />
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2.6" vectorEffect="non-scaling-stroke" markerMid={`url(#${markerId})`} markerEnd={`url(#${markerId})`} />
     </svg>
   );
 }
@@ -144,16 +144,29 @@ export default function Home() {
       </aside>
 
       <section className="visualizer-stage">
-        <header className="stage-header"><div><p className="eyebrow">Live plot / unit channel</p><h2>Unit digit table</h2></div><div className="stage-meta"><span className="status-dot" /> <span>{visibleRows.length ? "Sequence rendered" : "Awaiting sequence"}</span><span className="meta-divider" /> <span>0—9 axis</span></div></header>
-        <div className="plot-card">
-          <div className="plot-topline"><span>ROW INDEX</span><span className="axis-label">DIGIT POSITION</span><span>CONNECTOR: UNIT</span></div>
-          <div className="plot-scroll">
-            <div className="plot-canvas" style={{ minHeight: Math.max(visibleRows.length * ROW_HEIGHT, 220) }}>
-              <div className="axis-row"><div className="row-index">#</div><div className="axis-cells">{Array.from({ length: 10 }, (_, digit) => <span key={digit}>{digit}</span>)}</div></div>
-              {visibleRows.length > 0 ? <div className="rows-layer">{visibleRows.map((row, index) => <GridRow key={`${row.value}-${index}`} row={row} index={index} />)}<ConnectorLayer rows={visibleRows} /></div> : <div className="empty-plot"><Search size={18} /><p>Paste a sequence to start plotting.</p><span>Three digits become three colour channels.</span></div>}
+        <header className="stage-header"><div><p className="eyebrow">Live plot / unit + ten channels</p><h2>Digit cycle tables</h2></div><div className="stage-meta"><span className="status-dot" /> <span>{visibleRows.length ? "Sequence rendered" : "Awaiting sequence"}</span><span className="meta-divider" /> <span>0—9 axis</span></div></header>
+        <div className="table-stack">
+          <div className="plot-card">
+            <div className="plot-topline"><span>UNIT DIGIT TABLE</span><span className="axis-label">DIGIT POSITION</span><span>CONNECTOR: UNIT</span></div>
+            <div className="plot-scroll">
+              <div className="plot-canvas" style={{ minHeight: Math.max(visibleRows.length * ROW_HEIGHT, 220) }}>
+                <div className="axis-row"><div className="row-index">#</div><div className="axis-cells">{Array.from({ length: 10 }, (_, digit) => <span key={digit}>{digit}</span>)}</div></div>
+                {visibleRows.length > 0 ? <div className="rows-layer">{visibleRows.map((row, index) => <GridRow key={`unit-${row.value}-${index}`} row={row} index={index} />)}<ConnectorLayer rows={visibleRows} digitIndex={2} markerId="unit-arrow" color="#ff3b2f" /></div> : <div className="empty-plot"><Search size={18} /><p>Paste a sequence to start plotting.</p><span>Three digits become three colour channels.</span></div>}
+              </div>
             </div>
+            <div className="plot-footer"><span>Rows: <strong>{visibleRows.length}</strong></span><span>Unit path: <strong className="red-text">{visibleRows.length > 1 ? `${visibleRows.length - 1} connections` : "—"}</strong></span><span>Format: <strong>000–999</strong></span></div>
           </div>
-          <div className="plot-footer"><span>Rows: <strong>{visibleRows.length}</strong></span><span>Unit path: <strong className="red-text">{visibleRows.length > 1 ? `${visibleRows.length - 1} connections` : "—"}</strong></span><span>Format: <strong>000–999</strong></span></div>
+
+          <div className="plot-card ten-table-card">
+            <div className="plot-topline"><span>TEN DIGIT TABLE</span><span className="axis-label">DIGIT POSITION</span><span>CONNECTOR: TEN</span></div>
+            <div className="plot-scroll">
+              <div className="plot-canvas" style={{ minHeight: Math.max(visibleRows.length * ROW_HEIGHT, 220) }}>
+                <div className="axis-row"><div className="row-index">#</div><div className="axis-cells">{Array.from({ length: 10 }, (_, digit) => <span key={digit}>{digit}</span>)}</div></div>
+                {visibleRows.length > 0 ? <div className="rows-layer">{visibleRows.map((row, index) => <GridRow key={`ten-${row.value}-${index}`} row={row} index={index} />)}<ConnectorLayer rows={visibleRows} digitIndex={1} markerId="ten-arrow" color="#78ee8b" /></div> : <div className="empty-plot"><Search size={18} /><p>Ten digit path will appear here.</p><span>Green arrows follow the middle digit.</span></div>}
+              </div>
+            </div>
+            <div className="plot-footer"><span>Rows: <strong>{visibleRows.length}</strong></span><span>Ten path: <strong className="green-text">{visibleRows.length > 1 ? `${visibleRows.length - 1} connections` : "—"}</strong></span><span>Channel: <strong className="green-text">TENS / GREEN</strong></span></div>
+          </div>
         </div>
         <footer className="page-footer"><span>Built for pattern reading</span><span>Graphite field · Signal channels · v1.0</span></footer>
       </section>
