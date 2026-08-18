@@ -3,7 +3,7 @@
  * Keep the plotting field dominant, use amber/mint/red as semantic channels,
  * and preserve monospaced rhythm for all plotted numeric data.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowRight, ClipboardPaste, Eraser, Info, Play, RotateCcw, Search } from "lucide-react";
 
 const SAMPLE = `979
@@ -92,8 +92,9 @@ function ConnectorLayer({ rows }: { rows: ParsedRow[] }) {
 }
 
 export default function Home() {
-  const [input, setInput] = useState(SAMPLE);
+  const [input, setInput] = useState("");
   const [hasRendered, setHasRendered] = useState(true);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const parsed = useMemo(() => parseRows(input), [input]);
   const visibleRows = hasRendered ? parsed.rows : [];
 
@@ -101,6 +102,7 @@ export default function Home() {
   const clearAll = () => {
     setInput("");
     setHasRendered(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
   const loadSample = () => {
     setInput(SAMPLE);
@@ -125,12 +127,12 @@ export default function Home() {
           <div className="section-heading"><label id="sequence-label" htmlFor="sequence-input">Input sequence</label><span>{parsed.rows.length} rows</span></div>
           <div className="textarea-wrap">
             <ClipboardPaste size={15} aria-hidden="true" />
-            <textarea id="sequence-input" value={input} onChange={(event) => setInput(event.target.value)} placeholder="979\n063\n395" spellCheck={false} aria-describedby="input-help" />
+            <textarea ref={inputRef} id="sequence-input" value={input} onChange={(event) => setInput(event.target.value)} placeholder="979\n063\n395" spellCheck={false} aria-describedby="input-help" />
           </div>
           <p id="input-help" className="helper-text">One three-digit value per line. Leading zeroes are preserved.</p>
           {parsed.invalid.length > 0 && <p className="validation-note"><Info size={13} /> Ignored: {parsed.invalid.slice(0, 3).join(", ")}{parsed.invalid.length > 3 ? "…" : ""}</p>}
           <button className="render-button" onClick={renderSequence}><Play size={15} fill="currentColor" /> Render sequence <ArrowRight size={15} /></button>
-          <div className="secondary-actions"><button onClick={loadSample}><RotateCcw size={14} /> Load sample</button><button onClick={clearAll}><Eraser size={14} /> Clear</button></div>
+          <div className="secondary-actions"><button onClick={loadSample}><RotateCcw size={14} /> Load sample</button><button onClick={clearAll}><Eraser size={14} /> Refresh table</button></div>
         </section>
 
         <section className="legend" aria-label="Digit position legend">
