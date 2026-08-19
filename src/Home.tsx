@@ -57,14 +57,15 @@ function GridRow({ row, index }: { row: ParsedRow; index: number }) {
       <div className="row-index">{String(index + 1).padStart(2, "0")}</div>
       <div className="digit-cells">
         {Array.from({ length: 10 }, (_, digit) => {
-          const position = row.digits.findIndex((value) => value === digit);
-          const isHundreds = position === 0;
-          const isTens = position === 1;
-          const isUnits = position === 2;
+          const positions = row.digits.reduce<number[]>((matches, value, index) => value === digit ? [...matches, index] : matches, []);
+          const isHundreds = positions.includes(0);
+          const isTens = positions.includes(1);
+          const isUnits = positions.includes(2);
+          const isRepeated = positions.length > 1;
           return (
             <div key={digit} className="digit-cell">
               <span
-                className={`digit-glyph ${isHundreds ? "is-amber" : ""} ${isTens ? "is-mint" : ""} ${isUnits ? "is-red" : ""} ${isHundreds && isUnits ? "is-double" : ""}`}
+                className={`digit-glyph ${isHundreds ? "is-amber" : ""} ${isTens ? "is-mint" : ""} ${isUnits ? "is-red" : ""} ${isRepeated ? "is-repeated" : ""} ${positions.length === 3 ? "is-triple" : ""}`}
               >
                 {digit}
               </span>
@@ -144,8 +145,19 @@ export default function Home() {
       </aside>
 
       <section className="visualizer-stage">
-        <header className="stage-header"><div><p className="eyebrow">Live plot / unit + ten channels</p><h2>Digit cycle tables</h2></div><div className="stage-meta"><span className="status-dot" /> <span>{visibleRows.length ? "Sequence rendered" : "Awaiting sequence"}</span><span className="meta-divider" /> <span>0—9 axis</span></div></header>
+        <header className="stage-header"><div><p className="eyebrow">Live plot / hundreds + ten + unit channels</p><h2>Digit cycle tables</h2></div><div className="stage-meta"><span className="status-dot" /> <span>{visibleRows.length ? "Sequence rendered" : "Awaiting sequence"}</span><span className="meta-divider" /> <span>0—9 axis</span></div></header>
         <div className="table-stack">
+          <div className="plot-card hundreds-table-card">
+            <div className="plot-topline"><span>HUNDREDS DIGIT TABLE</span><span className="axis-label">DIGIT POSITION</span><span>CONNECTOR: HUNDREDS</span></div>
+            <div className="plot-scroll">
+              <div className="plot-canvas" style={{ minHeight: Math.max(visibleRows.length * ROW_HEIGHT, 220) }}>
+                <div className="axis-row"><div className="row-index">#</div><div className="axis-cells">{Array.from({ length: 10 }, (_, digit) => <span key={digit}>{digit}</span>)}</div></div>
+                {visibleRows.length > 0 ? <div className="rows-layer">{visibleRows.map((row, index) => <GridRow key={`hundreds-${row.value}-${index}`} row={row} index={index} />)}<ConnectorLayer rows={visibleRows} digitIndex={0} markerId="hundreds-arrow" color="#f8c94e" /></div> : <div className="empty-plot"><Search size={18} /><p>Hundreds digit path will appear here.</p><span>Yellow arrows follow the first digit.</span></div>}
+              </div>
+            </div>
+            <div className="plot-footer"><span>Rows: <strong>{visibleRows.length}</strong></span><span>Hundreds path: <strong className="amber-text">{visibleRows.length > 1 ? `${visibleRows.length - 1} connections` : "—"}</strong></span><span>Channel: <strong className="amber-text">HUNDREDS / YELLOW</strong></span></div>
+          </div>
+
           <div className="plot-card">
             <div className="plot-topline"><span>UNIT DIGIT TABLE</span><span className="axis-label">DIGIT POSITION</span><span>CONNECTOR: UNIT</span></div>
             <div className="plot-scroll">
